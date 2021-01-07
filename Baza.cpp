@@ -1,19 +1,25 @@
 #include "Baza.h"
 
+Baza::Baza()
+{
+	baza = nullptr;
+	blad = nullptr;
+}
+
 void Baza::stworz_tabele()
 {
-	if (!czy_plik_istnieje()) {
-	string stworz_tabele_autor = "CREATE TABLE Autor \
+	if (przelacznik == 0) {
+		string stworz_tabele_autor = "CREATE TABLE Autor \
 				(ID INTEGER PRIMARY KEY AUTOINCREMENT, \
 				imie text, \
 				nazwisko text);";
 
-	string stworz_tabele_uzytkownik = "CREATE TABLE Uzytkownik \
+		string stworz_tabele_uzytkownik = "CREATE TABLE Uzytkownik \
 				(imie text, \
 				nazwisko text, \
 				PESEL text PRIMARY KEY);";
 
-	string stworz_tabele_ksiazka = "CREATE TABLE Ksiazka \
+		string stworz_tabele_ksiazka = "CREATE TABLE Ksiazka \
 				(ID INTEGER PRIMARY KEY AUTOINCREMENT, \
 				tytul text, \
 				ID_autora text, \
@@ -23,7 +29,7 @@ void Baza::stworz_tabele()
 				liczba_stron INTEGER,\
 				FOREIGN KEY(ID_autora) REFERENCES Autor(ID));";
 
-	string stworz_tabele_wypozyczenie = "CREATE TABLE Wypozyczenie \
+		string stworz_tabele_wypozyczenie = "CREATE TABLE Wypozyczenie \
 				(ID INTEGER PRIMARY KEY AUTOINCREMENT, \
 				ID_ksiazki text, \
 				PESEL text,\
@@ -62,7 +68,7 @@ int Baza::callback(void* NotUsed, int argc, char** argv, char** azColName)
 	return 0;
 }
 
-bool Baza::czy_plik_istnieje()
+int Baza::czy_plik_istnieje()
 {
 	const string s = "database.db";
 	fstream plik;
@@ -70,20 +76,51 @@ bool Baza::czy_plik_istnieje()
 	if (plik.is_open())
 	{
 		plik.close();
-		return true;
+		return przelacznik = 1;
 	}
 	plik.close();
-	return false;
+	return przelacznik = 0;
 }
 
-Baza::Baza()
+void Baza::zobacz_wypozyczenie()
 {
-	baza = nullptr;
-	blad = nullptr;
+	string zobacz = "SELECT * FROM Wypozyczenie";
+	kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
+	if (kod_bledu != SQLITE_OK) {
+		cout << "problem z wyswietleniem calej zawartosci wypozyczenia" << endl;
+	}
+}
+
+void Baza::zobacz_autor()
+{
+	string sql = "SELECT * FROM Autor";
+	kod_bledu = sqlite3_exec(baza, sql.c_str(), callback, 0, &blad);
+	if (kod_bledu != SQLITE_OK) {
+		cout << "problem z case 4" << endl;
+	}
+}
+
+void Baza::zobacz_ksiazka()
+{
+	string zobacz = "SELECT * FROM Ksiazka";
+	kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
+	if (kod_bledu != SQLITE_OK) {
+		cout << "problem z case 5" << endl;
+	}
+}
+
+void Baza::zobacz_uzytkownik()
+{
+	string zobacz = "SELECT * FROM Uzytkownik";
+	kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
+	if (kod_bledu != SQLITE_OK) {
+		cout << "problem z case 6" << endl;
+	}
 }
 
 void Baza::odpal()
 {
+	czy_plik_istnieje();
 	kod_bledu = sqlite3_open("database.db", &baza);
 	if (kod_bledu) {
 		cerr << "Nie udalo sie otworzyc bazy!!!" << endl;
@@ -112,11 +149,7 @@ void Baza::petla()
 		switch (wybor)
 		{
 		case '1': {
-			string zobacz = "SELECT * FROM Wypozyczenie";
-			kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
-			if (kod_bledu != SQLITE_OK) {
-				cout << "problem z wyswietleniem calej zawartosci wypozyczenia" << endl;
-			}
+			zobacz_wypozyczenie();
 			break;
 		}
 		case '2': {
@@ -124,64 +157,50 @@ void Baza::petla()
 			break;
 		}
 		case '3': {
+			string tytul;
+			string PESEL;
 
-			int id = 2;
-			string sql = "INSERT INTO Wypozyczenie VALUES(NULL,'" + to_string(id) + "',98765432);";
-			//string sql = "INSERT INTO Wypozyczenie VALUES(NULL,'cycycty','yxtytxty');";
-			kod_bledu = sqlite3_exec(baza, sql.c_str(), callback, 0, &blad);
+			cout << "Tytul ksiazki: ";
+			cin >> tytul;
+			cout << endl;
+
+			cout << "PESEL oddajacego: ";
+			cin >> PESEL;
+			cout << endl;
+
+			string sql1= "SELECT Ksiazka.tytul FROM Ksiazka WHERE (Ksiazka.tytul='"+tytul+"');";
+			string sql2 = "SELECT PESEL FROM Uzytkownik WHERE (Uzytkownik.PESEL='"+PESEL+"');";
+			string sql3="DELETE FROM Ksiazka WHERE tytul LIKE'%" + tytul + "%');";
+
+			kod_bledu = sqlite3_exec(baza, sql3.c_str(), callback, 0, &blad);
 			if (kod_bledu != SQLITE_OK) {
 				cout << "problem z case 3" << endl;
 			}
-			//string tytul;
-			//string PESEL;
 
-			//cout << "Tytul ksiazki: ";
-			//cin >> tytul;
-			//cout << endl;
-
-			//cout << "PESEL oddajacego: ";
-			//cin >> PESEL;
-			//cout << endl;
-
-			//Ksiazka k(tytul);
-			//Uzytkownik u(PESEL);
-			//wypozyczalnia.oddaj_ksiazke(k, u);
 			break;
 		}
 		case '4': {
-			string sql = "SELECT * FROM Autor";
-			kod_bledu = sqlite3_exec(baza, sql.c_str(), callback, 0, &blad);
-			if (kod_bledu != SQLITE_OK) {
-				cout << "problem z case 4" << endl;
-			}
+			zobacz_autor();
 			break;
 		}
 		case '5': {
-			string zobacz = "SELECT * FROM Ksiazka";
-			kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
-			if (kod_bledu != SQLITE_OK) {
-				cout << "problem z case 5" << endl;
-			}
+			zobacz_ksiazka();
 			break;
 		}
 		case '6': {
-			string zobacz = "SELECT * FROM Uzytkownik";
-			kod_bledu = sqlite3_exec(baza, zobacz.c_str(), callback, 0, &blad);
-			if (kod_bledu != SQLITE_OK) {
-				cout << "problem z case 6" << endl;
-			}
+			zobacz_uzytkownik();
 			break;
 		}
-		case '7': {
-			string zapytanie = "SELECT * FROM (Wypozyczenie INNER JOIN Ksiazka \
-					ON Wypozyczenie.ID_ksiazki = Ksiazka.ID) INNER JOIN Uzytkownik ON \
-					Wypozyczenie.PESEL = Uzytkownik.PESEL";
-			kod_bledu = sqlite3_exec(baza, zapytanie.c_str(), callback, 0, &blad);
-			if (kod_bledu != SQLITE_OK) {
-				cout << "problem z case 7" << endl;
-			}
-			break;
-		}
+		//case '7': {
+		//	string zapytanie = "SELECT * FROM (Wypozyczenie INNER JOIN Ksiazka \
+		//			ON Wypozyczenie.ID_ksiazki = Ksiazka.ID) INNER JOIN Uzytkownik ON \
+		//			Wypozyczenie.PESEL = Uzytkownik.PESEL";
+		//	kod_bledu = sqlite3_exec(baza, zapytanie.c_str(), callback, 0, &blad);
+		//	if (kod_bledu != SQLITE_OK) {
+		//		cout << "problem z case 7" << endl;
+		//	}
+		//	break;
+		//}
 		case 'q': {
 			exit(0);
 		}
@@ -312,7 +331,7 @@ void Baza::dodaj_wypozyczenie()
 
 	string dodaj_dane_do_ksiazka = "INSERT INTO Ksiazka \
 				(ID,tytul,ID_autora,rok,ISBN,wydawnictwo,liczba_stron)\
-				VALUES (NULL,'" + tytul + "','" + chujwiecotubedzie + "'," + rok_wydania_string + ",'" + ISBN + "','" + wydawnictwo + "'," + liczba_stron_string + ");";
+				VALUES (NULL,'" + tytul + "',NULL," + rok_wydania_string + ",'" + ISBN + "','" + wydawnictwo + "'," + liczba_stron_string + ");";
 
 	kod_bledu = sqlite3_exec(baza, dodaj_dane_do_ksiazka.c_str(), callback, 0, &blad);
 	if (kod_bledu != SQLITE_OK) {
